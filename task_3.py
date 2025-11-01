@@ -29,7 +29,12 @@ def parse_log_line(line: str) -> dict:
     if len(parts) < 4:
         raise ValueError("Некоректний формат")
     date, time, level, message = parts
-    return {"date": date, "time": time, "level": level.upper(), "message": message}
+    return {
+        "date": date,
+        "time": time,
+        "level": level.upper(),
+        "message": message,
+    }
 
 
 def load_logs(file_path: str) -> list:

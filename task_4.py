@@ -10,17 +10,6 @@
   close / exit
 """
 
-def parse_input(user_input: str):
-    """
-    Розбирає рядок користувача на команду та аргументи.
-    Повертає (command, args_list), де command у нижньому регістрі.
-    """
-    parts = user_input.split()
-    if not parts:
-        return "", []
-    cmd, *args = parts
-    return cmd.strip().lower(), args
-
 
 # ---------- Декоратор для обробки помилок ---------- #
 def input_error(func):
@@ -35,10 +24,20 @@ def input_error(func):
             return "Contact not found."
         except IndexError:
             return "Enter the argument for the command"
-        except ValueError as e:
-            # якщо хендлер підняв ValueError з текстом — повертаемо його
-            return str(e) if str(e) else "Give me name and phone please."
+        except ValueError:
+            # універсальне повідомлення для помилок аргументів
+            return "Give me name and phone please."
     return wrapper
+
+
+@input_error
+def parse_input(user_input: str):
+    """
+    Розбирає рядок користувача на команду та аргументи.
+    Ніяких додаткових перевірок — даємо помилкам піднятися у декоратор.
+    """
+    cmd, *args = user_input.split()
+    return cmd.strip().lower(), args
 
 
 # ---------- Хендлери команд ---------- #
@@ -47,37 +46,31 @@ def add_contact(args, contacts: dict) -> str:
     """
     Додає контакт. Очікує: add <name> <phone>
     """
-    if len(args) != 2:
-        raise ValueError("Give me name and phone please.")
     name, phone = args
     contacts[name] = phone
     return "Contact added."
+
 
 @input_error
 def change_contact(args, contacts: dict) -> str:
     """
     Змінює телефон існуючого контакту. Очікує: change <name> <new_phone>
     """
-    if len(args) != 2:
-        raise ValueError("Give me name and phone please.")
     name, new_phone = args
-    if name not in contacts:
-        raise KeyError(name)
     contacts[name] = new_phone
     return "Contact updated."
+
 
 @input_error
 def show_phone(args, contacts: dict) -> str:
     """
     Повертає телефон за ім'ям. Очікує: phone <name>
     """
-    if len(args) != 1:
-        # нема аргумента імені
-        raise IndexError
-    name = args[0]
-    if name not in contacts:
-        raise KeyError(name)
+    # якщо аргумент не один — помилка (ловить декоратор)
+    (name,) = args
+    # якщо контакту немає — KeyError (ловить декоратор)
     return contacts[name]
+
 
 @input_error
 def show_all(contacts: dict) -> str:
@@ -96,7 +89,14 @@ def main():
 
     while True:
         user_input = input("Enter a command: ").strip()
-        command, args = parse_input(user_input)
+        parsed = parse_input(user_input)
+
+        if isinstance(parsed, str):
+            if parsed:
+                print(parsed)
+            continue
+
+        command, args = parsed
 
         if command in ("close", "exit"):
             print("Good bye!")

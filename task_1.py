@@ -29,7 +29,9 @@ def caching_fibonacci():
 
     return fibonacci
 
+
 # Приклад використання:
 fib = caching_fibonacci()
+
 print(fib(10))  # 55
 print(fib(15))  # 610
